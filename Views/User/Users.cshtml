@@ -1,0 +1,96 @@
+﻿@model IEnumerable<DairyWeb.Models.UsersModel>
+
+@{
+    ViewBag.Title = "Users";
+}
+<div class="card shadow-lg">
+    <div class="card-header">
+        <h3>User</h3>
+    </div>
+    <div class="card-body">
+
+        <p>
+            <a href="@Url.Action("UpsertUser")" class="btn btn-grad"><i class="fas fa-plus-circle"></i> Add New User</a>
+        </p>
+        <div class="table-responsive">
+            <table class="table table-bordered success-border">
+                <thead class="success text-white">
+                    <tr>
+                        
+                        <th>
+                            @Html.DisplayNameFor(model => model.UserName)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Password)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.RoleId)
+                        </th>
+
+                        <th></th>
+                    </tr>
+                </thead>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UserName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Password)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.RoleId)
+                        </td>
+
+                        <td style="display:flex">
+                            <a href="@Url.Action("UpsertUser","User",new { id = item.Id })" class="editbutton btn btn-outline-primary"><i class="fas fa-pen-alt"></i></a> |
+                            <a onclick="OpenDeleteModal(@item.Id)" href="#" class="btn btn-outline-primary deletebutton"><i class="fas fa-trash"></i></a>
+
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="UserDeleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <label>Are you sure you want to delete user?</label>
+                <form method="post" action="@Url.Action("DeleteUser","User")">
+                    <input type="hidden" name="id" id="hdnDelId" />
+                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-secondary badge-pill" data-dismiss="modal">Close</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script>
+
+        function OpenDeleteModal(id) {
+            $("#UserDeleteModal").modal("show");
+            $("#hdnDelId").val(id);
+        }
+
+    </script>
+}

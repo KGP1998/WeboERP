@@ -1,0 +1,246 @@
+﻿@{
+    ViewBag.Title = "Transaction";
+}
+<div class="container" style="margin:0px;padding:0px;">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">@DairyWeb.Resource.Dashboard.Transaction</h6>
+                </div>
+                <div class="card-body">
+                    <form autocomplete="off">
+                        <input type="hidden" id="hdnId" />
+                        <div class="row">
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label small">Payment Received Date</label>
+                                    <input type="text" id="orderDate" name="orderDate" class="form-control datepicker bg-white" style="width:100%" readonly>
+                                    <span class="form-error" id="errorDate"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <div class="form-group">
+                                    <label class="col-form-label small">Payment Method</label>
+                                    <select id="drpPaymentType" style="float:right;display:inline" class="form-control">
+                                        <option value="1" selected>Cash</option>
+                                        <option value="2">Bank</option>
+                                    </select>
+                                    <span class="form-error" id="errorPaymentType"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label small" style="display:block">@Html.DisplayName(DairyWeb.Resource.Orders.Name)</label>
+                                    <input type="number" id="txtCustomerNo" onchange="ChangeCustomerSelection()" class="form-control" style="width:20%;display:inline" />
+                                    <select id="drpCustomer" style="width:75%;float:right;display:inline" class="form-control" onchange="ChangeCustomerDetails()"></select>
+                                    <span class="form-error" id="errorCustomer"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <div class="form-group">
+                                    <label class="col-form-label small" style="display:block">Outstanding Amount</label>
+                                    <input type="number" id="txtOutstandingAmount" class="form-control bg-white" disabled />
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <div class="form-group">
+                                    <label class="col-form-label small" style="display:block">@Html.DisplayName(DairyWeb.Resource.Orders.Amount)</label>
+                                    <input type="number" id="txtAmount" class="form-control" />
+                                    <span class="form-error" id="errorAmount"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-12">
+                                <div class="form-group">
+                                    <label class="col-form-label small" style="display:block">@Html.DisplayName(DairyWeb.Resource.Common.Notes)</label>
+                                    <textarea id="txtNotes" class="form-control"></textarea>
+                                    <span class="form-error" id="errorNotes"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-12">
+                                <div class="form-group">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-grad" onclick="SaveTransactionData()">Save</button>
+                                        <a href='@Url.Action("Transaction")' class="btn  btn-secondary ">Back to List</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            var transactionId = '@Convert.ToInt32(ViewBag.TransactionId)';
+            var today = new Date();
+
+            $("#orderDate").datepicker({ dateFormat: 'dd/mm/yy' });
+            $("#orderDate").datepicker("setDate", today);
+
+            GetTranactonDataById(transactionId);
+        });
+        function GetTranactonDataById(transactionId) {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetTransactionData", "Transaction")',
+                data: { id: transactionId },
+                success: function (response) {
+                    if (response.Success) {
+                        var htmlCustomers = "<option value=" + 0 + ">--Select--</option>";
+                        response.customers.filter(function (item) {
+                            htmlCustomers += GenrateDropDown(item.Id, (item.SerialNo + " " + item.FirstName + " " + (item.LastName == null ? "" : item.LastName)));
+                        });
+                        $("#drpCustomer").html(htmlCustomers);
+                        if (response.transaction.Id > 0) {
+                            $("#hdnId").val(response.transaction.Id);
+                            $("#drpCustomer").val(response.transaction.CustomerId);
+                            $("#drpPaymentType").val(response.transaction.PaymentType);
+                            GetOutStandingAmountForCustomer(response.transaction.CustomerId);
+                            $("#txtAmount").val(response.transaction.Amount);
+                            $("#orderDate").datepicker("setDate", parseJsonDate(response.transaction.TransactionDate));
+                        }
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+        function SaveTransactionData() {
+            ClearControlsError();
+            var Id = $("#hdnId").val();
+            var customerId = $("#drpCustomer").val();
+            var paymentType = $("#drpPaymentType").val();
+            var amount = $("#txtAmount").val();
+            var orderDate = $("#orderDate").val();
+            var isValid = true;
+            if (!Id) {
+                Id = 0;
+            }
+            if (!customerId || customerId == 0) {
+                isValid = false;
+                $("#errorCustomer").text("Please select customer");
+            }
+
+            if (!amount.trim()) {
+                isValid = false;
+                $("#errorAmount").text("Please enter amount");
+            }
+            if (isNaN(amount) || Number(amount) <= 0) {
+                isValid = false;
+                $("#errorAmount").text("Please enter valid amount");
+            }
+            if (!orderDate.trim()) {
+                isValid = false;
+                $("#errorDate").text("Please select date");
+            }
+            if (!isValid) {
+                return;
+            }
+            var postedData = {
+                /*Id: Id,*/
+                CustomerId: customerId,
+                PaymentType:paymentType,
+                Amount: amount.trim(),
+                TransactionDate: ConvertDateToDDMMYY(orderDate)
+            };
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("UpsertTransaction","Transaction")',
+                data: postedData,
+                success: function (response) {
+                    if (response.Success) {
+                        toastr.success(response.Message);
+                        if (response.Message == "Transation updated successfully") {
+                            window.location.href ='@Url.Action("Transaction", "Transaction")';
+                        } else {
+                            ClearControls();
+                        }
+
+                    } else {
+                        toastr.error(response.Message);
+                    }
+                },
+                error: function (error) {
+                    toastr.error(error.Message);
+
+                }
+            })
+        }
+        function GenrateDropDown(value, text) {
+            return "<option value=" + value + ">" + text + "</option>";
+        }
+        function ClearControls() {
+            $("#drpCustomer").val(0);
+            $("#txtOutstandingAmount").val("");
+            $("#drpPaymentType").val(1);
+            $("#txtCustomerNo").val("");
+            $("#txtAmount").val("");
+            var today = new Date();
+            $("#orderDate").datepicker({ dateFormat: 'dd/mm/yy' });
+            $("#orderDate").datepicker("setDate", today);
+        }
+        function ClearControlsError() {
+            $("#errorCustomer").text("");
+            $("#errorAmount").text("");
+            $("#errorDate").text("");
+        }
+        function ChangeCustomerDetails() {
+            var customerId = $("#drpCustomer").val();
+            var selectedCustomerText = $("#drpCustomer option:selected").text();
+            var selectedTextArr = selectedCustomerText.split(' ');
+            if (selectedTextArr[0]) {
+                $("#txtCustomerNo").val(selectedTextArr[0])
+            }
+            GetOutStandingAmountForCustomer(customerId);
+
+        }
+        function ChangeCustomerSelection() {
+            var customerNo = $("#txtCustomerNo").val();
+            if (!isNaN(customerNo) && customerNo > 0) {
+
+                $.each($("#drpCustomer").children(), function (index, item) {
+                    var optionTextArr = item.innerText.split(' ');
+                    if (!isNaN(optionTextArr[0])) {
+                        if (optionTextArr[0] == customerNo) {
+                            $("#drpCustomer").val(item.value);
+                            var customerId = $("#drpCustomer").val();
+                            GetOutStandingAmountForCustomer(customerId);
+                            return false;
+                        } else {
+                            $("#drpCustomer").val(0);
+                            $("#txtOutstandingAmount").val(0);
+                        }
+                    }
+                });
+            } else {
+                $("#drpCustomer").val(0);
+                $("#txtOutstandingAmount").val(0);
+            }
+
+        }
+        function GetOutStandingAmountForCustomer(customerId) {
+             $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetOutStandingAmountForCustomer", "Transaction")',
+                 data: { customerId: customerId },
+                success: function (response) {
+                    if (response.Success) {
+                        $("#txtOutstandingAmount").val(response.Data);
+                    } else {
+                        alert(response.Message);
+                    }
+
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+    </script>
+}

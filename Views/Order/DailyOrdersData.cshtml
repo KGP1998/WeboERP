@@ -1,0 +1,353 @@
+﻿
+@{
+    ViewBag.Title = "Daily Sale";
+}
+
+<p>
+    <a href="@Url.Action("UpsertOrder")" class="btn btn-grad"><i class="fas fa-plus-circle"></i> New Sale</a>
+</p>
+<div class="card shadow-lg">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Daily Sales</h6>
+    </div>
+    <div class="card-body">
+
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-sm-12 col-md-4">
+                    <div class="form-group">
+                        <div class="col-md-2">
+                            <label>Route:</label>
+                        </div>
+
+                        <div class="col-md-6">
+                            <select id="drpRoute" class="form-control" onchange="GetOrderData()">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-4">
+                    <div class="form-group">
+                        <div class="col-md-2">
+                            <label for="toDate" style="text-align:center">Shift:</label>
+                        </div>
+
+                        <div class="col-md-6">
+                            <select id="drpShift" class="form-control" onchange="GetOrderData()">
+                                <option value="1">Morning</option>
+                                <option value="2">Evening</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                @*<div class="col-sm-12 col-md-4">
+                        <div class="col-md-12 col-sm-6">
+                            <label id="lblSaleDate" style="float:left">Sale Date :</label>
+                        </div>
+                        <div class="col-md-12 col-sm-6">
+                            <label id="saleDate"></label>
+                        </div>
+                    </div>*@
+                <div class="col-sm-12 col-md-4">
+                    <div class="form-group">
+                        <div class="col-md-4">
+                            <label for="saleDate">Sale Date:</label>
+                        </div>
+
+                        <div class="col-md-8">
+                            <input type="text" id="saleDate" class="form-control datepicker" style="max-width:80%;display:inline;margin-right:3px" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br />
+        <div class="table-responsive" id="divOrder">
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="OrderDeleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">Order</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <label>Are you sure you want to delete order?</label>
+                <form method="post" action="@Url.Action("DeleteOrder","Order")">
+                    <input type="hidden" name="id" id="hdnDelId" />
+                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-secondary " data-dismiss="modal">Close</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="OrderEditModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog " role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">Order</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <form>
+                    <label class="col-form-label-sm">Quantity:</label>
+                    <input type="number" id="txtQty" class="form-control" min="0" onchange="ChangePriceQuantity()" />
+                    <label class="col-form-label-sm">Price:</label>
+                    <input type="number" id="txtPrice" class="form-control" min="0" onchange="ChangePriceQuantity()" />
+                    <label class="col-form-label-sm">Total:</label>
+                    <input type="number" id="txtTotal" class="form-control" readonly />
+                </form>
+                <br />
+                <button type="submit" class="btn btn-primary" onclick="SubmitOrderToClient()">Submit</button>
+                <button type="button" class="btn btn-secondary " data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script>
+        var TrToEdit = '';
+        $(document).ready(function () {
+            ConfigureDate();
+            GetRoutes();
+           
+        });
+        function OpenDeleteModal(id) {
+            $("#OrderDeleteModal").modal("show");
+            $("#hdnDelId").val(id);
+        }
+        function GetOrderData() {
+            var route = $("#drpRoute").val();
+            var shift = $("#drpShift").val();
+            var saleDate = ConvertDateToDDMMYY($("#saleDate").val());
+            var postData = {
+                routeId: route,
+                shift: shift,
+                saleDate: saleDate
+            };
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetDailyOrdersData","Order")',
+                data: postData,
+                success: function (response) {
+                    if (response.Success) {
+
+                        var strHtml = `<table class="table table-bordered" id="tblOrder">
+                                    <thead class="success">
+                                        <tr>
+                                            <th></th>
+                                            <th style='display:none'>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.OrderDate)</th>
+                                            <th style='display:none'>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Shift)</th>
+                                            <th style='display:none'>ShiftId</th>
+                                            <th style="width:20px!important">@Html.DisplayName(DairyWeb.Resource.DairyOrderData.CustomerNo)</th>
+                                            <th>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Name)</th>
+                                            <th style='display:none'>CustomerId</th>
+                                            <th>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Product)</th>
+                                            <th style='display:none'>ProductId</th>
+                                            <th>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Qty)</th>
+                                            <th>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Rate)</th>
+                                            <th>@Html.DisplayName(DairyWeb.Resource.DairyOrderData.Amount)</th>
+                                            <th style='display:none'>RouteId</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>`;
+                        response.Data.forEach(function (item) {
+                            strHtml += `<tr>
+                                   <td><a  onclick="SaveDailyOrder(this)" href="#" title='Save Sale' class="editbutton btn btn-outline-secondary"><i class="fas fa-save" style="font-size:12px"></i></a></td>
+                                   <td style='display:none'>${parseJsonFormattedDate(item.OrderDate)}</td>
+                                   <td style='display:none'>${item.ShiftName}</td>
+                                   <td style='display:none'>${item.Shift}</td>
+                                   <td>${item.SerialNo} </td>
+                                   <td>${item.CustomerName}</td>
+                                   <td style='display:none'>${item.CustomerId}</td>
+                                   <td>${item.ProductName}</td>
+                                   <td style='display:none'>${item.ProductId}</td>
+                                   <td class="text-center">${item.Quantity}</td>
+                                   <td class="text-right">${financial(item.Price)}</td>
+                                   <td class="text-right">${financial(item.Total)}</td >
+                                   <td style='display:none'>${item.RouteId}</td>
+                                   <td style="display:flex">
+                                       <a  onclick="OpenEditModal(this)" href="#" title='Edit Sale' class="editbutton btn btn-outline-secondary"><i class="fas fa-pen-alt"></i></a>
+                                   </td>
+                               </tr>`;
+                        });
+                        strHtml += `</table>`;
+                        $("#divOrder").html(strHtml);
+                        $('#tblOrder').addClass("table-striped");
+                        $('#tblOrder').DataTable({
+                            "pageLength": 50,
+                            order: [4, 'asc'],
+                            "columnDefs": [
+                                { "orderable": false, "targets": [0, 13] }, // Applies the option to all columns
+                                { width: "5%", targets: [0, 13] },
+                                { width: "15%", targets: [9, 10, 11] }
+                            ]
+                        });
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+
+        function GetRoutes() {
+
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetRoutes","Order")',
+                success: function (response) {
+                    if (response.Success) {
+
+                        var htmlRoute = "<option value=" + 0 + ">--Select--</option>";
+                        response.routes.filter(function (item) {
+                            htmlRoute += GenrateDropDown(item.Id, item.RouteName);
+                        });
+                        $("#drpRoute").html(htmlRoute);
+                        GetOrderData();
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+
+        function GenrateDropDown(value, text) {
+            return "<option value=" + value + ">" + text + "</option>";
+        }
+
+        function SaveDailyOrder(btn) {
+
+            var orderDate = btn.parentElement.parentElement.children[1].innerText;
+            var shift = btn.parentElement.parentElement.children[3].innerText;
+            var customerId = btn.parentElement.parentElement.children[6].innerText;
+            var productId = btn.parentElement.parentElement.children[8].innerText;
+            var quantity = btn.parentElement.parentElement.children[9].innerText;
+            if (isNaN(quantity) || Number(quantity) <= 0) {
+                toastr.error("Please enter valid Quantity.");
+                return;
+            }
+
+            var price = btn.parentElement.parentElement.children[10].innerText;
+            if (isNaN(price) || Number(price) <= 0) {
+                toastr.error("Please enter valid Price.");
+                return;
+            }
+            var total = btn.parentElement.parentElement.children[11].innerText;
+            var routeId = btn.parentElement.parentElement.children[12].innerText;
+            var postData = {
+                OrderDate: ConvertDateToDDMMYY(orderDate),
+                Shift: shift,
+                CustomerId: customerId,
+                ProductId: productId,
+                Quantity: quantity,
+                Price: price,
+                Total: (quantity * price),
+                RouteId: routeId
+            }
+            $.ajax({
+                type: "POST",
+                data: postData,
+                url: '@Url.Action("UpsertOrder","Order")',
+                success: function (response) {
+                    if (response.Success) {
+                        toastr.success(response.Message);
+                        GetOrderData();
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+        function OpenEditModal(btn) {
+            var orderDate = btn.parentElement.parentElement.children[1].innerText;
+            var shift = btn.parentElement.parentElement.children[3].innerText;
+            var customerId = btn.parentElement.parentElement.children[6].innerText;
+            var productId = btn.parentElement.parentElement.children[8].innerText;
+            var quantity = btn.parentElement.parentElement.children[9].innerText;
+            var price = btn.parentElement.parentElement.children[10].innerText;
+            var total = btn.parentElement.parentElement.children[11].innerText;
+            var routeId = btn.parentElement.parentElement.children[12].innerText;
+            TrToEdit = btn.parentElement.parentElement;
+            $("#txtQty").val(quantity);
+            $("#txtPrice").val(price);
+            $("#txtTotal").val(total);
+            $("#OrderEditModal").modal("show");
+        }
+        function SubmitOrderToClient() {
+            var qty = $("#txtQty").val();
+            var price = $("#txtPrice").val();
+            var total = $("#txtTotal").val();
+            if (isNaN(qty) || Number(qty) <= 0) {
+                toastr.error("Please enter valid Quantity.");
+                return;
+            }
+            if (isNaN(price) || Number(price) <= 0) {
+                toastr.error("Please enter valid Price.");
+                return;
+            }
+            TrToEdit.children[9].innerText = qty;
+            TrToEdit.children[10].innerText = price;
+            TrToEdit.children[11].innerText = (qty * price);
+            $("#OrderEditModal").modal("hide");
+        }
+        function ChangePriceQuantity() {
+            var quantity = $("#txtQty").val();
+            var price = $("#txtPrice").val();
+            if (!isNaN(quantity) && !isNaN(price)) {
+                if (quantity < 0) {
+                    $("#txtQty").val("");
+                    $("#txtPrice").val("");
+                    $("#txtTotal").val("");
+                    return;
+                }
+                if (price < 0) {
+                    $("#txtQty").val("");
+                    $("#txtPrice").val("");
+                    $("#txtTotal").val("");
+                    return;
+                }
+                var total = quantity * price;
+                $("#txtTotal").val(total);
+            }
+        }
+        function ConfigureDate() {
+            var today = new Date();
+            var previoisMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate());
+
+            $("#saleDate").datepicker({
+                showOn: 'button',
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: 'dd/mm/yy',
+                maxDate: today
+            
+            }).next('button').button({
+                icons: {
+                    primary: 'ui-icon-calendar'
+                }, text: false
+            });
+
+            $("#saleDate").datepicker("setDate", today)
+                .on("change", function () {
+                    GetOrderData();
+            });
+        }
+
+    </script>
+
+}

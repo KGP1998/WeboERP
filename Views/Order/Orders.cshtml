@@ -1,0 +1,260 @@
+﻿
+@{
+    ViewBag.Title = "Orders";
+}
+
+<p>
+    <a href="@Url.Action("UpsertOrder")" class="btn btn-grad"><i class="fas fa-plus-circle"></i> New Sale</a>
+</p>
+<div class="card shadow-lg">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Sales</h6>
+    </div>
+    <div class="card-body">
+
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-sm-12 col-md-4">
+
+                    <div class="form-group">
+                        <label for="frmDate">From Date:</label>
+                        <div style="float:right;text-align:center">
+                            <input type="text" id="frmDate" class="form-control datepicker" style="max-width:80%;display:inline;margin-right:3px" readonly />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-4">
+                    <div class="form-group">
+                        <label for="toDate" style="text-align:center">To Date:</label>
+                        <div style="float:right;text-align:center">
+                            <input type="text" id="toDate" name="toDate" class="form-control datepicker" style="max-width:80%;display:inline;margin-right:3px" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br />
+        <div class="table-responsive" id="divOrder">
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="OrderDeleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">Order</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <label>Are you sure you want to delete order?</label>
+                <form method="post" action="@Url.Action("DeleteOrder","Order")">
+                    <input type="hidden" name="id" id="hdnDelId" />
+                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-secondary " data-dismiss="modal">Close</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script src="https://cdn.datatables.net/rowgroup/1.1.2/js/dataTables.rowGroup.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var today = new Date();
+            var previoisMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate());
+
+            $("#frmDate").datepicker({
+                showOn: 'button',
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: 'dd/mm/yy',
+            }).next('button').button({
+                    icons: {
+                    primary: 'ui-icon-calendar'
+                  }, text:false
+             });
+
+            $("#frmDate").datepicker("setDate", previoisMonthDate)
+                .on("change", function () {
+                      GetOrderData();
+                });
+
+            $("#toDate").datepicker({
+                showOn: 'button',
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: 'dd/mm/yy'
+            }).next('button').button({
+                    icons: {
+                    primary: 'ui-icon-calendar'
+                  }, text:false
+            });
+
+            $("#toDate").datepicker("setDate", today)
+              .on("change", function () {
+                      GetOrderData();
+              });
+
+            GetOrderData();
+        });
+        function OpenDeleteModal(id) {
+            $("#OrderDeleteModal").modal("show");
+            $("#hdnDelId").val(id);
+        }
+
+        function GetOrderData() {
+
+            var postData = {
+                fromDate:ConvertDateToDDMMYY($("#frmDate").val()),
+                toDate: ConvertDateToDDMMYY($("#toDate").val())
+            };
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("GetOrderData","Order")',
+                data: postData,
+                success: function (response) {
+                    if (response.Success) {
+
+                        var strHtml =`<table class="table table-bordered" id="tblOrder">
+                                    <thead class="success">
+                                        <tr>
+                                            <th data-sort='DDMMYYYY'>${'@DairyWeb.Resource.Orders.SaleDate'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Shift'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Route'}</th>
+                                            <th style="width:20px!important">${'@DairyWeb.Resource.Orders.CustomerNo'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Name'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Product'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Quantity'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Rate'}</th>
+                                            <th>${'@DairyWeb.Resource.Orders.Amount'}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>`;
+                        response.Data.forEach(function (item) {
+                            strHtml += `<tr>
+                                   <td>${parseJsonFormattedDate(item.OrderDate)}</td>
+                                   <td>${item.ShiftName}</td>
+                                   <td>${item.RouteName}</td>
+                                   <td>${item.SerialNo} </td>
+                                   <td>${item.CustomerName}</td>
+                                   <td>${item.ProductName}</td>
+                                   <td class="text-center">${item.Quantity}</td>
+                                   <td class="text-right">${financial(item.Price)}</td>
+                                   <td class="text-right">${financial(item.Total)}</td>
+                                   <td style="display:flex">
+                                       <a href="/Order/UpsertOrder/${item.Id}" class="editbutton btn btn-outline-primary"><i class="fas fa-pen-alt"></i></a> |
+                                       <a onclick="OpenDeleteModal(${item.Id})" href="#" class="btn btn-outline-primary deletebutton"><i class="fas fa-trash"></i></a>
+                                   </td>
+                               </tr>`;
+                        });
+                        strHtml += `  <tfoot>
+                                 <tr>
+                                     <th colspan="${8}" style="text-align:right">Total:</th>
+                                     <th></th> <th></th>
+                                 </tr>
+                             </tfoot></table>`;
+                        $("#divOrder").html(strHtml);
+                        $('#tblOrder').addClass("table-striped");
+                        var groupColumn = 5;
+                        $('#tblOrder').DataTable({
+                            "pageLength": 50,
+                            order: [[5, 'asc'], [0, 'desc']],
+                            "columnDefs": [
+                                { "orderable": false, "targets": [9] }, // Applies the option to all columns
+                                { width: "5%", targets: [9] }
+                            ],
+                            rowGroup: {
+                                
+                                startRender: null,
+                                endRender: function (rows, group) {
+                                    debugger;
+                                    var amount = rows
+                                        .data()
+                                        .pluck(8)
+                                        .reduce(function (a, b) {
+                                            return a + b * 1;
+                                        }, 0);
+                                    var Totalqty = rows
+                                        .data()
+                                        .pluck(6)
+                                        .reduce(function (a, b) {
+                                            return a + b * 1;
+                                        }, 0);
+
+                                    return $('<tr/>')
+                                        .append('<td colspan="5"><b>' + group + '</b></td>')
+                                        .append('<td></td>')
+                                        .append('<td class="text-center"><b>' + Totalqty.toFixed(2) + '</b></td>')
+                                        .append('<td></td>')
+                                        .append('<td class="text-right"><b>₹' + amount.toFixed(2) + '</b></td>')
+                                        .append('<td></td>')
+
+                                },
+                                dataSrc: 5
+                            },
+                            "footerCallback": function (row, data, start, end, display) {
+                                var api = this.api(), data;
+
+                                // Remove the formatting to get integer data for summation
+                                var intVal = function (i) {
+                                    return typeof i === 'string' ?
+                                        i.replace(/[\$,]/g, '') * 1 :
+                                        typeof i === 'number' ?
+                                            i : 0;
+                                };
+
+                                // Total over all pages
+                                total = api
+                                    .column(8)
+                                    .data()
+                                    .reduce(function (a, b) {
+                                        return intVal(a) + intVal(b);
+                                    }, 0);
+
+                                // Total over this page
+                                pageTotal = api
+                                    .column(8, { page: 'current' })
+                                    .data()
+                                    .reduce(function (a, b) {
+                                        return intVal(a) + intVal(b);
+                                    }, 0);
+
+                                // Update footer
+                                $(api.column(8).footer()).html(
+                                    '₹' + total
+                                );
+                            }
+                            //"drawCallback": function (settings) {
+                            //    var api = this.api();
+                            //    var rows = api.rows({ page: 'current' }).nodes();
+                            //    var last = null;
+
+                            //    api.column(groupColumn, { page: 'current' }).data().each(function (group, i) {
+                            //        if (last !== group) {
+                            //            $(rows).eq(i).before(
+                            //                '<tr class="group"><td colspan="9"><b>' + group + '</b></td></tr>'
+                            //            );
+
+                            //            last = group;
+                            //        }
+                            //    });
+                            //}
+
+                        });
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+    </script>
+}

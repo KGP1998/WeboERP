@@ -1,0 +1,401 @@
+﻿@model DairyWeb.Models.ProductModel
+
+@{
+    ViewBag.Title = "Add Sale";
+}
+
+<div class="container" style="margin:0px;padding:0px;">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Sale</h6>
+                </div>
+                <div class="card-body">
+
+                    <form autocomplete="off">
+                        <input type="hidden" id="hdnId" />
+                        <div class="row">
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.SaleDate)</label>
+                                    <input type="text" id="orderDate" name="orderDate" class="form-control datepicker" style="width:100%" readonly>
+                                    <span class="form-error" id="errorDate"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Route)</label>
+                                    <select id="drpRoute" class="form-control" onchange="ChangeRouteData()"></select>
+                                    <span class="form-error" id="errorRoute"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Shift)</label>
+                                    <select id="drpShift" class="form-control" onchange="ChangeCustomerDetails()">
+                                        <option value="1">Morning</option>
+                                        <option value="2">Evening</option>
+                                    </select>
+                                    <span class="form-error" id="errorShift"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label" style="display:block">@Html.DisplayName(DairyWeb.Resource.Orders.Name)</label>
+                                    <input type="number" id="txtCustomerNo" onchange="ChangeCustomerSelection()" class="form-control" style="width:20%;display:inline" />
+                                    <select id="drpCustomer" style="width:75%;float:right;display:inline" class="form-control" onchange="ChangeCustomerDetails()"></select>
+                                    <span class="form-error" id="errorCustomer"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Product)</label>
+                                    <select id="drpProduct" class="form-control" onchange="ChangeProductData()"></select>
+                                    <span class="form-error" id="errorProduct"></span>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Quantity)</label>
+                                    <input autocomplete="off" type="number" class="form-control" id="txtQuantity" min="0" onchange="ChangePriceQuantity()">
+                                    <span class="form-error" id="errorQuantity"></span>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Rate)</label>
+                                    <input autocomplete="off" type="number" class="form-control" id="txtPrice" min="0" onchange="ChangePriceQuantity()">
+                                    <span class="form-error" id="errorPrice"></span>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3">
+                                <div class="form-group">
+                                    <label class="col-form-label">@Html.DisplayName(DairyWeb.Resource.Orders.Amount)</label>
+                                    <input autocomplete="off" type="number" class="form-control" id="txtTotal" min="0" disabled>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-12">
+                                <div class="form-group">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-grad" onclick="SaveOrderData()">Save</button>
+                                        <a href='@Url.Action("Orders")' class="btn  btn-secondary ">Back to List</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var orderId = '@Convert.ToInt32(ViewBag.OrderId)';
+        var customerDropdownData = [];
+        $(document).ready(function () {
+            var today = new Date();
+
+            $("#orderDate").datepicker({ dateFormat: 'dd/mm/yy' });
+            $("#orderDate").datepicker("setDate", today);
+            GetOrdersData(orderId);
+        });
+        function GetOrdersData(orderId) {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("GetOrdersData","Order")',
+                data: { id: orderId },
+                success: function (response) {
+                    if (response.Success) {
+
+                        var htmlProducts = "<option value=" + 0 + ">--Select--</option>";
+                        response.products.filter(function (item) {
+                            htmlProducts += GenrateDropDown(item.Id, item.Name);
+                        });
+                        $("#drpProduct").html(htmlProducts);
+
+                        var htmlCustomers = "<option value=" + 0 + ">--Select--</option>";
+                        //response.customers.filter(function (item) {
+                        //    htmlCustomers += GenrateDropDown(item.Id, (item.SerialNo +" "+item.FirstName +" "+item.LastName));
+                        //});
+                        customerDropdownData = response.customers;
+                        $("#drpCustomer").html(htmlCustomers);
+                        $("#drpCustomer").prop("disabled", true);
+                        var htmlRoute = "<option value=" + 0 + ">--Select--</option>";
+                        response.routes.filter(function (item) {
+                            htmlRoute += GenrateDropDown(item.Id, item.RouteName);
+                        });
+                        $("#drpRoute").html(htmlRoute);
+                        if (response.order.Id > 0) {
+
+                            $("#hdnId").val(response.order.Id);
+                            $("#drpRoute").val(response.order.RouteId);
+                            ChangeRouteData();
+                            $("#drpShift").val(response.order.Shift);
+                            $("#drpProduct").val(response.order.ProductId);
+                            $("#drpCustomer").val(response.order.CustomerId);
+                            $("#txtQuantity").val(response.order.Quantity);
+                            $("#txtPrice").val(response.order.Price);
+                            $("#txtTotal").val(response.order.Total);
+                            $("#orderDate").datepicker("setDate", parseJsonDate(response.order.OrderDate));
+                        }
+
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+        function GenrateDropDown(value, text) {
+            return "<option value=" + value + ">" + text + "</option>";
+        }
+        function ClearControlsError() {
+            $("#errorRoute").text("");
+            $("#errorShift").text("");
+            $("#errorProduct").text("");
+            $("#errorCustomer").text("");
+            $("#errorPrice").text("");
+            $("#errorQuantity").text("");
+
+        }
+        function ClearControls() {
+            $("#drpCustomer").val(0);
+            $("#txtCustomerNo").val("");
+            $("#drpProduct").val(0);
+            $("#txtQuantity").val("");
+            $("#txtPrice").val("");
+            $("#txtTotal").val("");
+        }
+        function SaveOrderData() {
+            ClearControlsError();
+            var Id = $("#hdnId").val();
+            var routeId = $("#drpRoute").val();
+            var productId = $("#drpProduct").val();
+            var customerId = $("#drpCustomer").val();
+            var price = $("#txtPrice").val();
+            var quantity = $("#txtQuantity").val();
+            var total = $("#txtTotal").val();
+            var shift = $("#drpShift").val();
+            var orderDate = $("#orderDate").val();
+            var isValid = true;
+            if (!Id) {
+                Id = 0;
+            }
+            if (!routeId || routeId == 0) {
+                isValid = false;
+                $("#errorRoute").text("Please select route");
+            }
+            if (!productId || productId == 0) {
+                isValid = false;
+                $("#errorProduct").text("Please select product");
+            }
+            if (!customerId || customerId == 0) {
+                isValid = false;
+                $("#errorCustomer").text("Please select customer");
+            }
+            if (!shift || shift == 0) {
+                isValid = false;
+                $("#errorShift").text("Please select shift");
+            }
+            if (!price.trim()) {
+                isValid = false;
+                $("#errorPrice").text("Please enter price");
+            }
+            if (!quantity.trim()) {
+                isValid = false;
+                $("#errorQuantity").text("Please enter quantity");
+            }
+            if (isNaN(quantity) || Number(quantity) <= 0) {
+                isValid = false;
+                $("#errorQuantity").text("Please enter valid quantity");
+            }
+            if (isNaN(price) || Number(price) <= 0) {
+                isValid = false;
+                $("#errorPrice").text("Please enter valid price");
+            }
+            if (!orderDate.trim()) {
+                isValid = false;
+                $("#errorDate").text("Please select date");
+            }
+            if (!isValid) {
+                return;
+            }
+            var postedData = {
+                Id: Id,
+                RouteId: routeId,
+                ProductId: productId,
+                CustomerId: customerId,
+                Price: price.trim(),
+                Quantity: quantity.trim(),
+                Shift: shift,
+                OrderDate: ConvertDateToDDMMYY(orderDate)
+                //Total: total
+            };
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("UpsertOrder","Order")',
+                data: postedData,
+                success: function (response) {
+                    if (response.Success) {
+                        toastr.success(response.Message);
+                        if (response.Message == "Sale updated successfully") {
+                            window.location.href ='@Url.Action("Orders", "Order")';
+                        } else {
+                            ClearControls();
+                        }
+                        
+                    } else {
+                        toastr.error(response.Message);
+                    }
+                },
+                error: function (error) {
+                    toastr.error(error.Message);
+
+                }
+            })
+        }
+        function ChangeCustomerDetails() {
+            var customerId = $("#drpCustomer").val();
+            var selectedCustomerText = $("#drpCustomer option:selected").text();
+            var selectedTextArr = selectedCustomerText.split(' ');
+            if (selectedTextArr[0]) {
+                $("#txtCustomerNo").val(selectedTextArr[0])
+            }
+            var shift = $("#drpShift").val();
+            $("#txtPrice").val("");
+            $("#txtQuantity").val("");
+            $("#txtTotal").val("");
+            $("#drpProduct").val(0);
+            if (customerId && customerId != 0) {
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("ChangeCustomerDetails","Order")',
+                    data: { customerId: customerId, shift: shift },
+                    success: function (response) {
+                        if (response.Success) {
+                            $("#txtQuantity").val(response.quantity);
+                            $("#txtPrice").val(response.price);
+                            $("#txtTotal").val(response.total);
+                            $("#drpProduct").val(response.productId);
+
+                        } else {
+                            toastr.error(response.Message);
+
+                        }
+                    },
+                    error: function (error) {
+                        toastr.error(error.Message);
+
+                    }
+                });
+            } else {
+                $("#txtPrice").val("");
+                $("#txtQuantity").val("");
+                $("$txtTotal").val("");
+                $("#drpProduct").val(0);
+            }
+        }
+        function ChangePriceQuantity() {
+            var quantity = $("#txtQuantity").val();
+            var price = $("#txtPrice").val();
+            if (!isNaN(quantity) && !isNaN(price)) {
+                if (quantity < 0) {
+                    $("#txtQuantity").val("");
+                    $("#txtPrice").val("");
+                    $("#txtTotal").val("");
+                    return;
+                }
+                if (price < 0) {
+                    $("#txtQuantity").val("");
+                    $("#txtPrice").val("");
+                    $("#txtTotal").val("");
+                    return;
+                }
+                var total = quantity * price;
+                $("#txtTotal").val(total);
+            }
+        }
+        function ChangeCustomerSelection() {
+            var customerNo = $("#txtCustomerNo").val();
+            if (!isNaN(customerNo) && customerNo > 0) {
+
+                $.each($("#drpCustomer").children(), function (index, item) {
+                    var optionTextArr = item.innerText.split(' ');
+                    if (!isNaN(optionTextArr[0])) {
+                        if (optionTextArr[0] == customerNo) {
+                            $("#drpCustomer").val(item.value);
+                            ChangeCustomerDetails();
+                            return false;
+                        } else {
+                            $("#drpCustomer").val(0);
+                            $("#txtPrice").val("");
+                            $("#txtQuantity").val("");
+                            $("#txtTotal").val("");
+                            $("#drpProduct").val(0);
+                        }
+                    }
+                });
+            } else {
+                $("#txtPrice").val("");
+                $("#txtQuantity").val("");
+                $("#txtTotal").val("");
+                $("#drpCustomer").val(0);
+                $("#drpProduct").val(0);
+            }
+        }
+        function ChangeRouteData() {
+            var routeId = $("#drpRoute").val();
+            if (routeId != 0) {
+
+                var customers = customerDropdownData.filter(x => x.RouteId == routeId);
+                var htmlCustomers = "<option value=" + 0 + ">--Select--</option>";
+                customers.filter(function (item) {
+                    htmlCustomers += GenrateDropDown(item.Id, (item.SerialNo + " " + item.FirstName + " " + (item.LastName == null ? "" : item.LastName)));
+                });
+                $("#drpCustomer").html(htmlCustomers);
+                $("#drpCustomer").prop("disabled", false);
+
+            } else {
+                var htmlCustomers = "<option value=" + 0 + ">--Select--</option>";
+                $("#drpCustomer").html(htmlCustomers);
+                $("#drpCustomer").prop("disabled", true);
+                $("#txtPrice").val("");
+                $("#txtQuantity").val("");
+                $("#txtTotal").val("");
+                $("#txtCustomerNo").val("");
+                $("#drpProduct").val(0);
+            }
+        }
+        function ChangeProductData() {
+            var productId = $("#drpProduct").val();
+            if (productId && productId != 0) {
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("ChangeProductData", "Product")',
+                    data: { productId: productId },
+                    success: function (response) {
+                        if (response.Success) {
+                            console.log(response);
+                            $("#txtPrice").val(response.Data.Price);
+                            ChangePriceQuantity();
+                        } else {
+                            toastr.error(response.Message);
+                        }
+                    },
+                    error: function (error) {
+                        toastr.error(error.Message);
+                    }
+                });
+            } else {
+                $("#txtPrice").val("");
+            }
+        }
+    </script>
+}

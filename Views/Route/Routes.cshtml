@@ -1,0 +1,99 @@
+﻿@model IEnumerable<DairyWeb.Models.RouteModel>
+
+@{
+    ViewBag.Title = "Routes";
+}
+
+<p>
+    <a href="@Url.Action("UpsertRoute")" class="btn btn-grad"><i class="fas fa-plus-circle"></i> Add New Route</a>
+</p>
+<div class="card shadow-lg">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Route</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="success">
+                    <tr>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Route.RouteName)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Route.Area)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Route.Society)
+                        </th>
+
+                        <th></th>
+                    </tr>
+                </thead>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.RouteName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.AreaName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.SocietyName)
+                        </td>
+
+                        <td style="display:flex">
+                            <a href="@Url.Action("UpsertRoute","Route",new { id = item.Id })" class="editbutton btn btn-outline-primary"><i class="fas fa-pen-alt"></i></a> |
+                            <a onclick="OpenDeleteModal(@item.Id)" href="#" class="btn btn-outline-primary deletebutton"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="RouteDeleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">Route</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <label>Are you sure you want to delete route?</label>
+                <form method="post" action="@Url.Action("DeleteRoute","Route")">
+                    <input type="hidden" name="id" id="hdnDelId" />
+                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-secondary " data-dismiss="modal">Close</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script>
+        $(document).ready(function () {
+           
+            table = $('table').DataTable({
+                "pageLength": 50,
+                order: [0, 'asc'],
+                "columnDefs": [
+                                { "orderable": false, "targets": [3] }, // Applies the option to all columns
+                                { width: "10%", targets: [3] }
+                ]
+            });
+
+            table.draw();
+        });
+
+        function OpenDeleteModal(id) {
+            $("#RouteDeleteModal").modal("show");
+            $("#hdnDelId").val(id);
+        }
+
+    </script>
+}

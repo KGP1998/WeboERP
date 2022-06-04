@@ -1,0 +1,173 @@
+﻿@model DairyWeb.Models.CustomerModel
+
+@{
+    ViewBag.Title = "Add customer";
+}
+<style>
+    .saparator {
+        border: 0;
+        clear: both;
+        display: block;
+        width: 97%;
+        background-color: rgb(66,66,66);
+        height: 1px;
+    }
+</style>
+<div class="container" style="margin:0px;padding:0px;">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Customer</h6>
+                </div>
+                <div class="card-body">
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="row">
+
+                            <div class="col-12  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.FirstName, htmlAttributes: new { @class = "mb-1" })
+                                    @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+                            <div class="col-12  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.MiddleName, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.EditorFor(model => model.MiddleName, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.MiddleName, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+                            <div class="col-12  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.LastName, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+                                    @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+                            <div class="col-12  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.PhoneNo, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.EditorFor(model => model.PhoneNo, new { htmlAttributes = new { @class = "form-control", @type = "number", maxlength = "10" } })
+                                    @Html.ValidationMessageFor(model => model.PhoneNo, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+                            <div class="col-12  col-md-12">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.Address, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.TextAreaFor(model => model.Address, new { @class = "form-control", @rows = 2 })
+                                    @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+
+                            <div class="col-12  col-md-3" style="display:none">
+                                <div class="form-group">
+
+                                    @Html.Label(DairyWeb.Resource.Customer.Type, htmlAttributes: new { @class = "mb-1" })
+                                    @Html.TextBoxFor(model => model.CustomerType, new { @class = "form-control", @type = "number", Value = "1" })
+                                    @Html.ValidationMessageFor(model => model.CustomerType, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+
+                            <hr class="saparator" />
+
+                            <div class="col-12  col-md-6">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.Route, htmlAttributes: new { @class = "mb-1" })
+
+                                    @*@Html.EditorFor(model => model.RouteId, new { htmlAttributes = new { @class = "form-control" } })*@
+                                    @Html.DropDownListFor(model => model.RouteId, Model.Routes, "--Select--", new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(model => model.RouteId, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+
+                            <div class="col-12  col-md-6">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.Product, htmlAttributes: new { @class = "mb-1" })
+                                    @Html.DropDownListFor(model => model.ProductId, Model.Products, "--Select--", new { @class = "form-control", @onchange = "ChangeData()" })
+                                    @Html.ValidationMessageFor(model => model.ProductId, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+
+
+                            <div class="col-6  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.MorningQty, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.EditorFor(model => model.MorningQuantity, new { htmlAttributes = new { @class = "form-control", @type = "number" } })
+                                    @Html.ValidationMessageFor(model => model.MorningQuantity, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-6  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.MorningRate, htmlAttributes: new { @class = "mb-1" })
+                                    @Html.EditorFor(model => model.MorningPrice, new { htmlAttributes = new { @class = "form-control", @type = "number" } })
+                                    @Html.ValidationMessageFor(model => model.MorningPrice, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-6  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.EveningQty, htmlAttributes: new { @class = "mb-1" })
+                                    @Html.EditorFor(model => model.EveningQuantity, new { htmlAttributes = new { @class = "form-control", @type = "number" } })
+                                    @Html.ValidationMessageFor(model => model.EveningQuantity, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-6  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label(DairyWeb.Resource.Customer.EveningRate, htmlAttributes: new { @class = "mb-1" })
+
+                                    @Html.EditorFor(model => model.EveningPrice, new { htmlAttributes = new { @class = "form-control", @type = "number" } })
+                                    @Html.ValidationMessageFor(model => model.EveningPrice, "", new { @class = "text-danger" })
+
+                                </div>
+                            </div>
+                            <div class="col-6  col-md-3">
+                                <div class="form-group">
+                                    @Html.Label("Active", htmlAttributes: new { @class = "mb-1" })
+                                    @Html.CheckBoxFor(model => model.IsActive)
+                                    @Html.ValidationMessageFor(model => model.IsActive, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <input type="submit" value="Save" class="btn btn-grad" />
+                                    <a href='@Url.Action("Customers")' class="btn  btn-secondary ">Back to List</a>
+                                </div>
+                            </div>
+                        </div>
+
+                    }
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@section scripts {
+    <script>
+        function ChangeData() {
+            console.log("Hello");
+        }
+    </script>
+}

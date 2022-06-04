@@ -1,0 +1,118 @@
+﻿@model IEnumerable<DairyWeb.Models.ProductModel>
+
+@{
+    ViewBag.Title = "Products";
+}
+<p>
+    <a href="@Url.Action("UpsertProduct")" class="btn btn-grad"><i class="fas fa-plus-circle"></i> Add New Product</a>
+</p>
+<div class="card shadow-lg">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Products</h6>
+    </div>
+    <div class="card-body">
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="success">
+                    <tr>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Product.ProductName)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Product.Type)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Product.Price)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Product.Company)
+                        </th>
+                        <th>
+                            @Html.DisplayName(DairyWeb.Resource.Product.MeasurementUnit)
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Name)
+                            </td>
+                            <td>
+                                @if (item.ProductType == 1)
+                                {
+                                    <span>Milk</span>
+                                }
+                                else
+                                {
+                                   <span>Ohter</span>
+                                }
+
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Price)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.CompanyName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.MeasurementUnit)
+                            </td>
+                            <td style="display:flex">
+                                <a href="@Url.Action("UpsertProduct","Product",new { id = item.Id })" class="editbutton btn btn-outline-primary"><i class="fas fa-pen-alt"></i></a> |
+                                <a onclick="OpenDeleteModal(@item.Id)" href="#" class="btn btn-outline-primary deletebutton"><i class="fas fa-trash"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ProductDeleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header card-header">
+                <h5 class="modal-title" id="exampleModalLabel">Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body card-body">
+                <label>Are you sure you want to delete product?</label>
+                <form method="post" action="@Url.Action("DeleteProduct","Product")">
+                    <input type="hidden" name="id" id="hdnDelId" />
+                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-secondary " data-dismiss="modal">Close</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script>
+        $(document).ready(function () {
+           
+            table = $('table').DataTable({
+                "pageLength": 50,
+                order: [0, 'asc'],
+                "columnDefs": [
+                                { "orderable": false, "targets": [5] }, // Applies the option to all columns
+                                { width: "10%", targets: [5] }
+                ]
+            });
+
+            table.draw();
+        });
+
+        function OpenDeleteModal(id) {
+            $("#ProductDeleteModal").modal("show");
+            $("#hdnDelId").val(id);
+        }
+
+    </script>
+}
